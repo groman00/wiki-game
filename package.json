@@ -1,0 +1,14 @@
+{
+  "name": "wiki-game",
+  "version": "1.0.0",
+  "description": "Prototype for a game using content from wikipedia.com",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Gregory Roman",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.13.3"
+  }
+}
