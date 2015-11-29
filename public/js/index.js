@@ -8,10 +8,10 @@
     var $doc = $(doc),
         util = win.UTIL;
 
-
-
     function WikiGame(){
         
+        this.hostname = win.location.hostname;
+
         $doc
             .on('click', 'a', this.proxyLink.bind(this))
             .on('submit', 'form', this.proxyForm.bind(this));
@@ -22,11 +22,20 @@
 
         e.preventDefault();
 
-        var link = $(e.currentTarget);
+        var link = e.currentTarget;
         console.log(link);
 
-        alert('links are disabled, logic needed...');
+        //external links should open in a new tab
+        if(link.hostname !== this.hostname){
+            win.open(link.href);
+            return false;
+        }
 
+        //all /wiki/ links should point to our term detail page
+        if(link.pathname.split('/')[1] === 'wiki'){
+            win.location = link.href;
+        }
+        
     };
 
     WikiGame.prototype.proxyForm = function(e){
@@ -35,7 +44,7 @@
 
         if($form.prop('id') === 'searchform'){
 
-            win.location = '/wiki/' + $('#searchInput').val().replace(/ /g, '+');
+            win.location = '/wiki/' + $('#searchInput').val().replace(/ /g, '_');
 
         }else{
 

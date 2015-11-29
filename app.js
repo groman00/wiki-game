@@ -18,7 +18,7 @@ function renderSanitized(res, template, content){
     
     var sanitized = sanitizeHtml(content, {
         allowedTags: sanitizeHtml.defaults.allowedTags.concat([
-            'html', 'head', 'body', 'link', 'style', 'form', 'input', 'option', 'title', 'meta', 'h1', 'h2'
+            'html', 'head', 'body', 'link', 'style', 'form', 'input', 'option', 'title', 'meta', 'h1', 'h2', 'span'
         ]),
         allowedAttributes: false
     });
