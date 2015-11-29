@@ -5,7 +5,9 @@
 (function(win, doc, $){
 
     //globals
-    var $doc = $(doc);
+    var $doc = $(doc),
+        util = win.UTIL;
+
 
 
     function WikiGame(){
@@ -33,7 +35,7 @@
 
         if($form.prop('id') === 'searchform'){
 
-            alert('search is disabled, logic needed...');
+            win.location = '/wiki/' + $('#searchInput').val().replace(/ /g, '+');
 
         }else{
 

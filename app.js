@@ -14,25 +14,43 @@ app.set('view engine', 'jade');
 app.use(express.static('public'));
 
 
+function renderSanitized(res, template, content){
+    
+    var sanitized = sanitizeHtml(content, {
+        allowedTags: sanitizeHtml.defaults.allowedTags.concat([
+            'html', 'head', 'body', 'link', 'style', 'form', 'input', 'option', 'title', 'meta', 'h1', 'h2'
+        ]),
+        allowedAttributes: false
+    });
+    
+    //render template without closing body and html tags so we can inject our own js code
+    res.render(template, { wikiContent: sanitized.substr(0, sanitized.indexOf('</body>'))});    
+
+};
+
+
 app.get('/', function (req, res) {
     
     request(externalUrl + '/wiki/Main_Page', function (error, response, body) {
     //request('https://www.wikipedia.org/search-redirect.php?family=wikipedia&language=en&search=fudge&go=&go=Go', function (error, response, body) {
     //request('https://en.wikipedia.org/w/load.php?debug=false&lang=en&modules=ext.cite.styles%7Cext.gadget.DRN-wizard%2CReferenceTooltips%2CWatchlistBase%2CWatchlistGreenIndicators%2Ccharinsert%2Cfeatured-articles-links%2CrefToolbar%2Cswitcher%2Cteahouse%7Cext.uls.nojs%7Cext.visualEditor.desktopArticleTarget.noscript%7Cext.wikimediaBadges%7Cmediawiki.legacy.commonPrint%2Cshared%7Cmediawiki.raggett%2CsectionAnchor%7Cmediawiki.skinning.interface%7Cskins.vector.styles%7Cwikibase.client.init&only=styles&skin=vector', function (error, response, body) {
-    
         if (!error && response.statusCode == 200) {
-            var sanitized = sanitizeHtml(body, {
-                    allowedTags: sanitizeHtml.defaults.allowedTags.concat([
-                        'html', 'head', 'body', 'link', 'style', 'form', 'input', 'option', 'title', 'meta', 'h1', 'h2'
-                    ]),
-                    allowedAttributes: false
-                });
-            
-            //render template without closing body and html tags so we can inject our own js code
-            res.render('index', { wikiContent: sanitized.substr(0, sanitized.indexOf('</body>'))});
+           renderSanitized(res, 'index', body);
         }
     });
 });
+
+
+//Term Detail Page
+app.get('/wiki/:term', function (req, res) {
+    request(externalUrl + '/w/index.php?search=' + req.params.term +'&title=Special%3ASearch&go=Go', function (error, response, body) {    
+        if (!error && response.statusCode == 200) {
+            renderSanitized(res, 'index', body);
+        }
+    });    
+});
+
+
 
 
 //proxy assets found at wikipedia.org/w/load.php?param=something
