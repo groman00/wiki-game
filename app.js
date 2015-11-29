@@ -23,13 +23,12 @@ app.get('/', function (req, res) {
         if (!error && response.statusCode == 200) {
             var sanitized = sanitizeHtml(body, {
                     allowedTags: sanitizeHtml.defaults.allowedTags.concat([
-                        'html', 'head', 'body', 'link', 'style', 'form', 'input', 'option'
+                        'html', 'head', 'body', 'link', 'style', 'form', 'input', 'option', 'title', 'meta', 'h1', 'h2'
                     ]),
                     allowedAttributes: false
                 });
             
-            //console.log();
-            //res.send(sanitized.substr(0, sanitized.indexOf('</body>')));
+            //render template without closing body and html tags so we can inject our own js code
             res.render('index', { wikiContent: sanitized.substr(0, sanitized.indexOf('</body>'))});
         }
     });
@@ -41,8 +40,10 @@ app.get('/', function (req, res) {
 app.get('/w/load.php', function (req, res) {
     request(externalUrl + req.originalUrl, function (error, response, body) {
         if (!error && response.statusCode == 200) {
-            //res.send('https://en.wikipedia.org' + req.ori);
-            res.send(body);
+            res.writeHead(200, {
+                'Content-Type': response.headers['content-type']
+            });
+            res.end(body);
         }else{
             res.end();
         }
