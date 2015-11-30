@@ -1,17 +1,66 @@
 var express = require('express')
     , app = express()
     , request = require('request')
+    , cookieParser = require('cookie-parser')
+    , parseurl = require('parseurl')
+    , session = require('express-session')
     , sanitizeHtml = require('sanitize-html');
-
+    
 
 //var externalUrl = 'https://www.wikipedia.org/';
 var externalUrl = 'https://en.wikipedia.org';
 var externalImagePath = '/portal/wikipedia.org/assets/img/';
 
-
 app.set('views', './views')
 app.set('view engine', 'jade');
 app.use(express.static('public'));
+
+/* User tracking */
+/* 
+    todo: 
+        - move to new file? 
+        - store the "start" url and "end" url once we have a ui for starting games
+*/
+app.use(cookieParser());
+
+app.use(session({
+    secret: 'x7WiKiKey7x',
+    name: 'wikigameconnect.sid',
+    //store: sessionStore, // connect-mongo session store
+    //proxy: true,
+    resave: false,
+    saveUninitialized: false
+}));
+
+//https://github.com/expressjs/session
+app.use(function (req, res, next) {
+    
+    // get the url pathname
+    var pathname = parseurl(req).pathname, 
+        views;
+
+    if(pathname.indexOf('/wiki/') !== 0){
+        next();
+        return false;
+    }
+
+    views = req.session.views;
+
+
+
+    if (!views) {
+        views = req.session.views = {};
+    }
+
+    // count the views
+    views[pathname] = (views[pathname] || 0) + 1;
+
+    console.log(views);
+
+    next();
+
+});
+/* */
 
 
 function renderSanitized(res, template, content){

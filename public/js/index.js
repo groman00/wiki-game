@@ -1,5 +1,11 @@
 /*
  * Wikipedia Game
+ *
+ * todo: 
+ *  - create a button and input field to "start a game"
+ *  - input captures "end url" that the user wishes to find
+ *  - maybe refresh the page with a param to start game on server side 
+ *  - prevent user from copy and pasting into the url bar.  Possibly attach a token to each link?
  */
 
 (function(win, doc, $){
