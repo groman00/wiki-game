@@ -15,11 +15,11 @@ app.set('views', './views')
 app.set('view engine', 'jade');
 app.use(express.static('public'));
 
-/* User tracking */
-/* 
+/*  User Tracking
     todo: 
         - move to new file? 
         - store the "start" url and "end" url once we have a ui for starting games
+        - see section about using mongo: http://blog.modulus.io/nodejs-and-express-sessions
 */
 app.use(cookieParser());
 

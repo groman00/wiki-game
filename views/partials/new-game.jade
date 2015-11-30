@@ -1,0 +1,9 @@
+div(id="newGame" class="new-game")
+    div(class="note") ^ make this collapsible ^
+    form
+        h2 Start A New Game
+        label
+            input(type="url" required name="endUrl" placeholder="Enter destination url")
+        input(type="hidden" name="startUrl")
+        label
+            button(type="submit") Start Game
