@@ -25,21 +25,28 @@
 
     };
 
+    WikiGame.prototype.verifyHost = function(link){
+        return link.hostname === this.hostname;
+    };
+
+    WikiGame.prototype.verifyLink = function(link){
+        return link.pathname.split('/')[1] === 'wiki';
+    };
+
     WikiGame.prototype.proxyLink = function(e){
 
         e.preventDefault();
 
         var link = e.currentTarget;
-        console.log(link);
 
         //external links should open in a new tab
-        if(link.hostname !== this.hostname){
+        if(!this.verifyHost(link)){
             win.open(link.href);
             return false;
         }
 
         //all /wiki/ links should point to our term detail page
-        if(link.pathname.split('/')[1] === 'wiki'){
+        if(this.verifyLink(link)){
             win.location = link.href;
         }
         
@@ -49,18 +56,43 @@
 
         var $form = $(e.currentTarget);
 
-        if($form.prop('id') === 'searchform'){
+        switch ($form.prop('id')) {
+            
+            case 'searchform':
+                
+                win.location = '/wiki/' + $('#searchInput').val().replace(/ /g, '_');
+                return false;
+                break;
 
-            win.location = '/wiki/' + $('#searchInput').val().replace(/ /g, '_');
+            case 'newGameForm':
 
-        }else{
+                return this.startNewGame($form);
 
-            throw('Form not programmed for this game');
+                break;
+
+            default:
+
+                console.log('Form not programmed for this game')
+                return false;
 
         }
 
-        return false;
+    };
 
+    WikiGame.prototype.startNewGame = function($form){
+        
+        var link = doc.createElement('A');
+
+        link.href = $form.find('input[name="endUrl"]').val();
+        
+        //eventually we'll just use a topic instead of an url...
+        if(!this.verifyHost(link) && !this.verifyLink(link)){
+            alert('please enter a wikipedia link');
+            return false;    
+        }
+
+        return true;
+    
     };
 
     var game = new WikiGame();

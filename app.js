@@ -46,8 +46,6 @@ app.use(function (req, res, next) {
 
     views = req.session.views;
 
-
-
     if (!views) {
         views = req.session.views = {};
     }
@@ -63,7 +61,7 @@ app.use(function (req, res, next) {
 /* */
 
 
-function renderSanitized(res, template, content){
+function renderSanitized(req, res, template, content){
     
     var sanitized = sanitizeHtml(content, {
         allowedTags: sanitizeHtml.defaults.allowedTags.concat([
@@ -73,10 +71,20 @@ function renderSanitized(res, template, content){
     });
     
     //render template without closing body and html tags so we can inject our own js code
-    res.render(template, { wikiContent: sanitized.substr(0, sanitized.indexOf('</body>'))});    
+    res.render(template, {
+        wikiContent: sanitized.substr(0, sanitized.indexOf('</body>')),
+        pathname: parseurl(req).pathname
+    });    
 
 };
 
+function renderSearchTerm(req, res){
+    request(externalUrl + '/w/index.php?search=' + req.params.term +'&title=Special%3ASearch&go=Go', function (error, response, body) {    
+        if (!error && response.statusCode == 200) {
+            renderSanitized(req, res, 'index', body);
+        }
+    }); 
+}
 
 app.get('/', function (req, res) {
     
@@ -84,7 +92,7 @@ app.get('/', function (req, res) {
     //request('https://www.wikipedia.org/search-redirect.php?family=wikipedia&language=en&search=fudge&go=&go=Go', function (error, response, body) {
     //request('https://en.wikipedia.org/w/load.php?debug=false&lang=en&modules=ext.cite.styles%7Cext.gadget.DRN-wizard%2CReferenceTooltips%2CWatchlistBase%2CWatchlistGreenIndicators%2Ccharinsert%2Cfeatured-articles-links%2CrefToolbar%2Cswitcher%2Cteahouse%7Cext.uls.nojs%7Cext.visualEditor.desktopArticleTarget.noscript%7Cext.wikimediaBadges%7Cmediawiki.legacy.commonPrint%2Cshared%7Cmediawiki.raggett%2CsectionAnchor%7Cmediawiki.skinning.interface%7Cskins.vector.styles%7Cwikibase.client.init&only=styles&skin=vector', function (error, response, body) {
         if (!error && response.statusCode == 200) {
-           renderSanitized(res, 'index', body);
+           renderSanitized(req, res, 'index', body);
         }
     });
 });
@@ -92,13 +100,13 @@ app.get('/', function (req, res) {
 
 //Term Detail Page
 app.get('/wiki/:term', function (req, res) {
-    request(externalUrl + '/w/index.php?search=' + req.params.term +'&title=Special%3ASearch&go=Go', function (error, response, body) {    
-        if (!error && response.statusCode == 200) {
-            renderSanitized(res, 'index', body);
-        }
-    });    
+    renderSearchTerm(req, res);    
 });
 
+app.post('/wiki/:term', function (req, res) {
+    console.log(req.params);
+    renderSearchTerm(req, res);
+});
 
 
 
