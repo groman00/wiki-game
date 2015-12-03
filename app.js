@@ -1,7 +1,9 @@
 var express = require('express')
     , app = express()
     , request = require('request')
+    , url = require('url')
     , cookieParser = require('cookie-parser')
+    , bodyParser = require('body-parser')
     , parseurl = require('parseurl')
     , session = require('express-session')
     , sanitizeHtml = require('sanitize-html');
@@ -15,12 +17,23 @@ app.set('views', './views')
 app.set('view engine', 'jade');
 app.use(express.static('public'));
 
+app.use(bodyParser.json()); // for parsing application/json
+app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x-www-form-urlencoded
+
+
 /*  User Tracking
     todo: 
         - move to new file? 
         - store the "start" url and "end" url once we have a ui for starting games
         - see section about using mongo: http://blog.modulus.io/nodejs-and-express-sessions
 */
+
+function clearSession(req){
+    delete req.session.views;   
+    delete req.session.startUrl;
+    delete req.session.endUrl;
+};
+
 app.use(cookieParser());
 
 app.use(session({
@@ -34,14 +47,19 @@ app.use(session({
 
 //https://github.com/expressjs/session
 app.use(function (req, res, next) {
-    
+
     // get the url pathname
-    var pathname = parseurl(req).pathname, 
+    var pathname = parseurl(req).pathname.toLowerCase(), 
         views;
 
     if(pathname.indexOf('/wiki/') !== 0){
         next();
         return false;
+    }
+
+    //clear session values if this is a new game
+    if(req.body.endUrl){
+        clearSession(req);
     }
 
     views = req.session.views;
@@ -61,6 +79,7 @@ app.use(function (req, res, next) {
 /* */
 
 
+
 function renderSanitized(req, res, template, content){
     
     var sanitized = sanitizeHtml(content, {
@@ -70,10 +89,33 @@ function renderSanitized(req, res, template, content){
         allowedAttributes: false
     });
     
+    //determine game state
+    var state = 'new';
+    var views = req.session.views;
+    var viewCount = views ? Object.keys(views).length : 0;
+    var endTerm;
+
+    if(req.session.endUrl){
+        
+        //this will eventually be an "endTerm"
+        endTerm = req.session.endUrl;
+
+        //check if current url is in our list of viewed urls
+        if(views.hasOwnProperty(req.session.endUrl.toLowerCase())){
+            state = 'complete';
+            clearSession(req);
+        }else{
+            state = 'inProgress';
+        }
+    }
+
     //render template without closing body and html tags so we can inject our own js code
     res.render(template, {
         wikiContent: sanitized.substr(0, sanitized.indexOf('</body>')),
-        pathname: parseurl(req).pathname
+        pathname: parseurl(req).pathname,
+        gameState: state,
+        uniquePageViews: viewCount,
+        term: endTerm
     });    
 
 };
@@ -104,7 +146,8 @@ app.get('/wiki/:term', function (req, res) {
 });
 
 app.post('/wiki/:term', function (req, res) {
-    console.log(req.params);
+    req.session.startUrl = req.body.startUrl;
+    req.session.endUrl = url.parse(req.body.endUrl).pathname;
     renderSearchTerm(req, res);
 });
 

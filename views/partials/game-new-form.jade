@@ -1,0 +1,7 @@
+form(method="POST" id="newGameForm")
+    h2 Start A New Game
+    label
+        input(type="url" required name="endUrl" placeholder="Enter destination url")
+    input(type="hidden" name="startUrl" value="#{pathname}")
+    label
+        button(type="submit") Start Game

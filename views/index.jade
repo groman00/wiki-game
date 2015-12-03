@@ -1,7 +1,13 @@
 <!DOCTYPE html>
 !=wikiContent
 link(rel="stylesheet", href="/css/style.css")
-include ./partials/new-game.jade
+case gameState
+    when 'new'
+        include ./partials/game-new.jade
+    when 'inProgress'
+        include ./partials/game-progress.jade
+    when 'complete'
+        include ./partials/game-complete.jade
 script(src="https://code.jquery.com/jquery-2.1.4.min.js")
 script(src="/js/util.js")
 script(src="/js/index.js")
