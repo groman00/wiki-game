@@ -1,7 +1,9 @@
 form(method="POST" id="newGameForm")
     h2 Start A New Game
+    if error
+        div(class="error") Topic not found, please try again
     label
-        input(type="url" required name="endUrl" placeholder="Enter destination url")
-    input(type="hidden" name="startUrl" value="#{pathname}")
+        input(type="text" required name="endTerm" placeholder="Enter Destination Topic")
+    input(type="hidden" name="startTerm" value="#{startTerm}")
     label
         button(type="submit") Start Game

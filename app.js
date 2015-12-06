@@ -30,8 +30,8 @@ app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x
 
 function clearSession(req){
     delete req.session.views;   
-    delete req.session.startUrl;
-    delete req.session.endUrl;
+    delete req.session.startTerm;
+    delete req.session.endTerm;
 };
 
 app.use(cookieParser());
@@ -50,7 +50,8 @@ app.use(function (req, res, next) {
 
     // get the url pathname
     var pathname = parseurl(req).pathname.toLowerCase(), 
-        views;
+        views,
+        term;
 
     if(pathname.indexOf('/wiki/') !== 0){
         next();
@@ -58,10 +59,11 @@ app.use(function (req, res, next) {
     }
 
     //clear session values if this is a new game
-    if(req.body.endUrl){
+    if(req.body.endTerm){
         clearSession(req);
     }
 
+    term = getTermFromUrl(req).toLowerCase();
     views = req.session.views;
 
     if (!views) {
@@ -69,7 +71,7 @@ app.use(function (req, res, next) {
     }
 
     // count the views
-    views[pathname] = (views[pathname] || 0) + 1;
+    views[term] = (views[term] || 0) + 1;
 
     console.log(views);
 
@@ -79,8 +81,12 @@ app.use(function (req, res, next) {
 /* */
 
 
+function getTermFromUrl(url){
+    var path = typeof url === 'string' ? url : parseurl(url).pathname;
+    return path.split('/').pop();
+};
 
-function renderSanitized(req, res, template, content){
+function renderSanitized(req, res, content, error){
     
     var sanitized = sanitizeHtml(content, {
         allowedTags: sanitizeHtml.defaults.allowedTags.concat([
@@ -95,13 +101,12 @@ function renderSanitized(req, res, template, content){
     var viewCount = views ? Object.keys(views).length : 0;
     var endTerm;
 
-    if(req.session.endUrl){
+    if(req.session.endTerm){
         
-        //this will eventually be an "endTerm"
-        endTerm = req.session.endUrl;
+        endTerm = req.session.endTerm;
 
         //check if current url is in our list of viewed urls
-        if(views.hasOwnProperty(req.session.endUrl.toLowerCase())){
+        if(views.hasOwnProperty(req.session.endTerm.toLowerCase())){
             state = 'complete';
             clearSession(req);
         }else{
@@ -110,23 +115,28 @@ function renderSanitized(req, res, template, content){
     }
 
     //render template without closing body and html tags so we can inject our own js code
-    res.render(template, {
+    res.render('index', {
         wikiContent: sanitized.substr(0, sanitized.indexOf('</body>')),
-        pathname: parseurl(req).pathname,
         gameState: state,
         uniquePageViews: viewCount,
-        term: endTerm
+        startTerm: getTermFromUrl(req).toLowerCase(),
+        endTerm: endTerm,
+        error: error
     });    
 
 };
 
-function renderSearchTerm(req, res){
-    request(externalUrl + '/w/index.php?search=' + req.params.term +'&title=Special%3ASearch&go=Go', function (error, response, body) {    
-        if (!error && response.statusCode == 200) {
-            renderSanitized(req, res, 'index', body);
-        }
-    }); 
-}
+function searchTerm(term, callback){
+    request(externalUrl + '/w/index.php?search=' + term +'&title=Special%3ASearch&go=Go', callback); 
+};
+
+function renderSearchTerm(req, res, error){
+    searchTerm(req.params.term, function(err, response, body){
+        if (!err && response.statusCode == 200) {
+            renderSanitized(req, res, body, error);
+        }        
+    });
+};
 
 app.get('/', function (req, res) {
     
@@ -134,7 +144,7 @@ app.get('/', function (req, res) {
     //request('https://www.wikipedia.org/search-redirect.php?family=wikipedia&language=en&search=fudge&go=&go=Go', function (error, response, body) {
     //request('https://en.wikipedia.org/w/load.php?debug=false&lang=en&modules=ext.cite.styles%7Cext.gadget.DRN-wizard%2CReferenceTooltips%2CWatchlistBase%2CWatchlistGreenIndicators%2Ccharinsert%2Cfeatured-articles-links%2CrefToolbar%2Cswitcher%2Cteahouse%7Cext.uls.nojs%7Cext.visualEditor.desktopArticleTarget.noscript%7Cext.wikimediaBadges%7Cmediawiki.legacy.commonPrint%2Cshared%7Cmediawiki.raggett%2CsectionAnchor%7Cmediawiki.skinning.interface%7Cskins.vector.styles%7Cwikibase.client.init&only=styles&skin=vector', function (error, response, body) {
         if (!error && response.statusCode == 200) {
-           renderSanitized(req, res, 'index', body);
+           renderSanitized(req, res, body, false);
         }
     });
 });
@@ -146,9 +156,20 @@ app.get('/wiki/:term', function (req, res) {
 });
 
 app.post('/wiki/:term', function (req, res) {
-    req.session.startUrl = req.body.startUrl;
-    req.session.endUrl = url.parse(req.body.endUrl).pathname;
-    renderSearchTerm(req, res);
+    
+    searchTerm(req.body.endTerm, function(error, response, body){
+
+        //no referer means topic not found
+        var notFound = !response.request.headers.referer;
+
+        if(!notFound){
+            req.session.startTerm = req.body.startTerm;
+            req.session.endTerm = getTermFromUrl(response.req.path);
+        }
+        
+        renderSearchTerm(req, res, notFound);
+
+    });
 });
 
 
