@@ -24,7 +24,6 @@ app.use(bodyParser.urlencoded({ extended: true })); // for parsing application/x
 /*  User Tracking
     todo: 
         - move to new file? 
-        - store the "start" url and "end" url once we have a ui for starting games
         - see section about using mongo: http://blog.modulus.io/nodejs-and-express-sessions
 */
 
@@ -103,10 +102,10 @@ function renderSanitized(req, res, content, error){
 
     if(req.session.endTerm){
         
-        endTerm = req.session.endTerm;
+        endTerm = req.session.endTerm.replace(/\_/g, ' ');
 
         //check if current url is in our list of viewed urls
-        if(views.hasOwnProperty(req.session.endTerm.toLowerCase())){
+        if(views.hasOwnProperty(req.session.endTerm)){
             state = 'complete';
             clearSession(req);
         }else{
@@ -164,7 +163,7 @@ app.post('/wiki/:term', function (req, res) {
 
         if(!notFound){
             req.session.startTerm = req.body.startTerm;
-            req.session.endTerm = getTermFromUrl(response.req.path);
+            req.session.endTerm = getTermFromUrl(response.req.path).toLowerCase();
         }
         
         renderSearchTerm(req, res, notFound);
