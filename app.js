@@ -138,14 +138,7 @@ function renderSearchTerm(req, res, error){
 };
 
 app.get('/', function (req, res) {
-    
-    request(externalUrl + '/wiki/Main_Page', function (error, response, body) {
-    //request('https://www.wikipedia.org/search-redirect.php?family=wikipedia&language=en&search=fudge&go=&go=Go', function (error, response, body) {
-    //request('https://en.wikipedia.org/w/load.php?debug=false&lang=en&modules=ext.cite.styles%7Cext.gadget.DRN-wizard%2CReferenceTooltips%2CWatchlistBase%2CWatchlistGreenIndicators%2Ccharinsert%2Cfeatured-articles-links%2CrefToolbar%2Cswitcher%2Cteahouse%7Cext.uls.nojs%7Cext.visualEditor.desktopArticleTarget.noscript%7Cext.wikimediaBadges%7Cmediawiki.legacy.commonPrint%2Cshared%7Cmediawiki.raggett%2CsectionAnchor%7Cmediawiki.skinning.interface%7Cskins.vector.styles%7Cwikibase.client.init&only=styles&skin=vector', function (error, response, body) {
-        if (!error && response.statusCode == 200) {
-           renderSanitized(req, res, body, false);
-        }
-    });
+    res.redirect('/wiki/Main_Page');
 });
 
 
